@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "Z6FAE6w2+QE=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Administrator\\source\\repos\\ModifiedItemDrop\\ModifiedItemDrop.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Administrator\\.nuget\\packages\\restoremonarchy.rocketredist\\3.25.9\\restoremonarchy.rocketredist.3.25.9.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\restoremonarchy.unturnedredist\\3.25.9\\restoremonarchy.unturnedredist.3.25.9.nupkg.sha512"
+  ],
+  "logs": []
+}

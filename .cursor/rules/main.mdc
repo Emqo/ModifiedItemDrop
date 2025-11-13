@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+- After any code changes, you must run `dotnet build` to compile the project before proceeding.

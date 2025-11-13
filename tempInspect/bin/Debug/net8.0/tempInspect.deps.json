@@ -1,0 +1,67 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "tempInspect/1.0.0": {
+        "dependencies": {
+          "Rocket.API": "4.9.3.16",
+          "Rocket.Core": "4.9.3.16",
+          "Rocket.Unturned": "4.9.3.18"
+        },
+        "runtime": {
+          "tempInspect.dll": {}
+        }
+      },
+      "Rocket.API/4.9.3.16": {
+        "runtime": {
+          "Rocket.API.dll": {
+            "assemblyVersion": "4.9.3.16",
+            "fileVersion": "4.9.3.16"
+          }
+        }
+      },
+      "Rocket.Core/4.9.3.16": {
+        "runtime": {
+          "Rocket.Core.dll": {
+            "assemblyVersion": "4.9.3.16",
+            "fileVersion": "4.9.3.16"
+          }
+        }
+      },
+      "Rocket.Unturned/4.9.3.18": {
+        "runtime": {
+          "Rocket.Unturned.dll": {
+            "assemblyVersion": "4.9.3.18",
+            "fileVersion": "4.9.3.18"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "tempInspect/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Rocket.API/4.9.3.16": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Rocket.Core/4.9.3.16": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Rocket.Unturned/4.9.3.18": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

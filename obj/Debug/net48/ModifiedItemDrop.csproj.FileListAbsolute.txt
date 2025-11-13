@@ -1,0 +1,9 @@
+C:\Users\Administrator\source\repos\ModifiedItemDrop\obj\Debug\net48\ModifiedItemDrop.csproj.AssemblyReference.cache
+C:\Users\Administrator\source\repos\ModifiedItemDrop\obj\Debug\net48\ModifiedItemDrop.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Administrator\source\repos\ModifiedItemDrop\obj\Debug\net48\ModifiedItemDrop.AssemblyInfoInputs.cache
+C:\Users\Administrator\source\repos\ModifiedItemDrop\obj\Debug\net48\ModifiedItemDrop.AssemblyInfo.cs
+C:\Users\Administrator\source\repos\ModifiedItemDrop\obj\Debug\net48\ModifiedItemDrop.csproj.CoreCompileInputs.cache
+C:\Users\Administrator\source\repos\ModifiedItemDrop\bin\Debug\net48\ModifiedItemDrop.dll
+C:\Users\Administrator\source\repos\ModifiedItemDrop\bin\Debug\net48\ModifiedItemDrop.pdb
+C:\Users\Administrator\source\repos\ModifiedItemDrop\obj\Debug\net48\ModifiedItemDrop.dll
+C:\Users\Administrator\source\repos\ModifiedItemDrop\obj\Debug\net48\ModifiedItemDrop.pdb
