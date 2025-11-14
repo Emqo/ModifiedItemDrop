@@ -2,94 +2,98 @@
 <!--
   ModifiedItemDrop 插件配置
 
-  1. EnableDebugLogging
-     - 控制是否输出详细的概率判定日志。
-     - true  : 控制台会打印每件物品的掉落判定过程，便于调试。
-     - false : 仅输出必要日志，建议线上环境关闭以减少刷屏。
-
-  2. RuleSet.GlobalDefaultChance
-     - 当物品既没有命中 CustomItemChances，也没有匹配到 RegionChances 时使用的兜底概率。
-     - 取值范围 0.0 ~ 1.0，例如 0.5 代表 50% 掉落概率。
-
-  3. RuleSet.RegionChances
-     - 针对不同槽位的基础掉落概率。
-     - Region 字段需要与代码中的 SlotType 枚举一致（PrimaryWeapon、SecondaryWeapon、Shirt 等）。
-     - Chance 同样是 0.0 ~ 1.0 的浮点数。
-     - 如果某个槽位未配置，则回落到 GlobalDefaultChance。
-
-  4. RuleSet.CustomItemChances
-     - 针对具体物品 ID 的专属概率，优先级最高。
-     - ItemID 为 Unturned 物品 ID，Chance 为 [0.0,1.0]。
-     - 每个 ItemID 仅生效一次；如果配置为空，则使用区域/全局概率。
-
-  修改配置后，可以通过游戏内命令 /mid reload 实时加载，无需重启服务器。
+  - 所有“概率”字段都是 0 ~ 1 的浮点数：
+      0   = 永远不掉
+      0.5 = 50% 概率掉落
+      1   = 必定掉落
+  - 修改后可在游戏内执行 /mid reload 即时生效。
 -->
 <ModifiedItemDropConfiguration xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <!-- true = 打印详细日志（用于调试）；线上建议 false -->
   <EnableDebugLogging>true</EnableDebugLogging>
+
   <RuleSet>
-    <GlobalDefaultChance>0.5</GlobalDefaultChance>
+    <!-- 全局兜底概率：当物品既没有命中 Region 也没有命中 CustomItem 时使用 -->
+    <GlobalDefaultChance>1</GlobalDefaultChance>
+
+    <!-- 针对不同背包页 / 槽位的基础掉落概率 -->
     <RegionChances>
-      <!-- 主武器槽（第 0 页） -->
+      <!-- 主武器（页 0）：100% 掉落 -->
       <RegionChanceEntry>
         <Region>PrimaryWeapon</Region>
-        <Chance>0.7</Chance>
+        <Chance>1</Chance>
       </RegionChanceEntry>
-      <!-- 副武器槽（第 1 页） -->
+      <!-- 副武器（页 1）：0% 掉落 -->
       <RegionChanceEntry>
         <Region>SecondaryWeapon</Region>
-        <Chance>0.3</Chance>
+        <Chance>0</Chance>
       </RegionChanceEntry>
-      <!-- 上衣内部容器 -->
-      <RegionChanceEntry>
-        <Region>Shirt</Region>
-        <Chance>0.4</Chance>
-      </RegionChanceEntry>
-      <!-- 裤子内部容器 -->
-      <RegionChanceEntry>
-        <Region>Pants</Region>
-        <Chance>0.4</Chance>
-      </RegionChanceEntry>
-      <!-- 背包内部容器 -->
-      <RegionChanceEntry>
-        <Region>Backpack</Region>
-        <Chance>0.5</Chance>
-      </RegionChanceEntry>
-      <!-- 胸甲/防弹衣容器 -->
-      <RegionChanceEntry>
-        <Region>Vest</Region>
-        <Chance>0.6</Chance>
-      </RegionChanceEntry>
-      <!-- 头部装备 -->
-      <RegionChanceEntry>
-        <Region>Hat</Region>
-        <Chance>0.3</Chance>
-      </RegionChanceEntry>
-      <!-- 口部装备 -->
-      <RegionChanceEntry>
-        <Region>Mask</Region>
-        <Chance>0.3</Chance>
-      </RegionChanceEntry>
-      <!-- 眼部装备（护目镜 / 夜视仪） -->
-      <RegionChanceEntry>
-        <Region>Glasses</Region>
-        <Chance>0.3</Chance>
-      </RegionChanceEntry>
-      <!-- 其他背包页（例如普通物品、工具、弹药等） -->
+      <!-- 其他背包页：100% 掉落 -->
       <RegionChanceEntry>
         <Region>Inventory</Region>
-        <Chance>0.5</Chance>
+        <Chance>1</Chance>
       </RegionChanceEntry>
     </RegionChances>
-    <!--
-      自定义物品概率列表：
-      <CustomItemChances>
-        <ItemChanceEntry>
-          <ItemID>15</ItemID>
-          <Chance>0.9</Chance>
-        </ItemChanceEntry>
-      </CustomItemChances>
-      若不需要，可保持为空标签。
-    -->
-    <CustomItemChances />
+
+    <!-- 针对具体物品 ID 的专属概率；如果不需要可保持空标签 -->
+    <CustomItemChances>
+      <!-- 示例：
+      <ItemChanceEntry>
+        <ItemID>15</ItemID>
+        <Chance>0.75</Chance>
+      </ItemChanceEntry>
+      -->
+    </CustomItemChances>
+
+    <!-- 衣物本体与内部容器规则 -->
+    <ClothingRules>
+      <!-- 上衣：本体 100% 掉落，内部物品 100% 掉落 -->
+      <ClothingSlot>
+        <Slot>Shirt</Slot>
+        <SlotDropChance>1</SlotDropChance>
+        <ContentsDropMode>UseContentsChance</ContentsDropMode>
+        <ContentsDropChance>1</ContentsDropChance>
+      </ClothingSlot>
+      <!-- 裤子：本体 100% 掉落，内部物品 100% 掉落 -->
+      <ClothingSlot>
+        <Slot>Pants</Slot>
+        <SlotDropChance>1</SlotDropChance>
+        <ContentsDropMode>UseContentsChance</ContentsDropMode>
+        <ContentsDropChance>1</ContentsDropChance>
+      </ClothingSlot>
+      <!-- 背包：本体保留，内部物品 100% 掉落 -->
+      <ClothingSlot>
+        <Slot>Backpack</Slot>
+        <SlotDropChance>0</SlotDropChance>
+        <ContentsDropMode>UseContentsChance</ContentsDropMode>
+        <ContentsDropChance>1</ContentsDropChance>
+      </ClothingSlot>
+      <!-- 防弹衣：本体保留，内部物品 45% 掉落 -->
+      <ClothingSlot>
+        <Slot>Vest</Slot>
+        <SlotDropChance>0</SlotDropChance>
+        <ContentsDropMode>UseContentsChance</ContentsDropMode>
+        <ContentsDropChance>0.45</ContentsDropChance>
+      </ClothingSlot>
+      <!-- 头部饰品默认保留，ContentsDropMode=Preserve 表示内部物品（若有）也保留 -->
+      <ClothingSlot>
+        <Slot>Hat</Slot>
+        <SlotDropChance>0</SlotDropChance>
+        <ContentsDropMode>Preserve</ContentsDropMode>
+        <ContentsDropChance>0</ContentsDropChance>
+      </ClothingSlot>
+      <ClothingSlot>
+        <Slot>Mask</Slot>
+        <SlotDropChance>0</SlotDropChance>
+        <ContentsDropMode>Preserve</ContentsDropMode>
+        <ContentsDropChance>0</ContentsDropChance>
+      </ClothingSlot>
+      <ClothingSlot>
+        <Slot>Glasses</Slot>
+        <SlotDropChance>0</SlotDropChance>
+        <ContentsDropMode>Preserve</ContentsDropMode>
+        <ContentsDropChance>0</ContentsDropChance>
+      </ClothingSlot>
+    </ClothingRules>
   </RuleSet>
 </ModifiedItemDropConfiguration>

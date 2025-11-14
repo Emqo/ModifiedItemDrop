@@ -43,10 +43,20 @@ namespace FFEmqo.ModifiedItemDrop.Drop
 
             var pending = new PendingRestore(player);
             var deathPosition = player.Position;
+            var serverDropsClothing = ShouldServerDropClothes(player);
 
             try
             {
+                ForceUnequipCurrentItem(player);
                 ProcessInventory(player, pending, deathPosition);
+                if (serverDropsClothing)
+                {
+                    DebugLog("Skipping clothing processing because server config already drops clothes on death.");
+                }
+                else
+                {
+                    ProcessClothing(player, pending, deathPosition);
+                }
 
                 if (pending.IsEmpty)
                 {
@@ -75,6 +85,7 @@ namespace FFEmqo.ModifiedItemDrop.Drop
             if (_pendingRestores.TryGetValue(player.CSteamID, out var pending))
             {
                 RestoreInventory(player, pending);
+                RestoreClothing(player, pending);
                 _pendingRestores.Remove(player.CSteamID);
             }
         }
@@ -156,6 +167,163 @@ namespace FFEmqo.ModifiedItemDrop.Drop
             }
         }
 
+        private void ProcessClothing(UnturnedPlayer player, PendingRestore pending, Vector3 deathPosition)
+        {
+            var snapshots = player.CaptureClothing();
+            if (snapshots.Count == 0)
+            {
+                return;
+            }
+
+            var clothing = player.Player.clothing;
+            foreach (var snapshot in snapshots)
+            {
+                var rule = _configurationLoader.CurrentRuleSet.ResolveClothingRule(snapshot.SlotType);
+                var chance = rule.SlotDropChance;
+                var roll = _random.NextDouble();
+                var shouldDrop = roll <= chance;
+
+                var container = PlayerExtensions.GetClothingContainer(clothing, snapshot.SlotType);
+                HandleClothingContents(snapshot, rule, pending, deathPosition, shouldDrop, chance, container);
+
+                var updatedSnapshot = PlayerExtensions.CaptureClothingSlot(clothing, snapshot.SlotType);
+                if (updatedSnapshot == null)
+                {
+                    continue;
+                }
+
+                if (shouldDrop)
+                {
+                    ClearClothingSlot(clothing, snapshot.SlotType);
+                    DropWorldItem(updatedSnapshot.Item, deathPosition);
+                    DebugLog($"Drop clothing slot={snapshot.SlotType} item={updatedSnapshot.Item.id} chance={chance:F4} roll={roll:F4} -> dropped");
+                }
+                else
+                {
+                    pending.ClothingItems.Add(updatedSnapshot);
+                    ClearClothingSlot(clothing, snapshot.SlotType);
+                    DebugLog($"Keep clothing slot={snapshot.SlotType} item={updatedSnapshot.Item.id} chance={chance:F4} roll={roll:F4} -> kept");
+                }
+            }
+        }
+
+        private static void ClearClothingSlot(PlayerClothing clothing, SlotType slot)
+        {
+            var emptyState = Array.Empty<byte>();
+            switch (slot)
+            {
+                case SlotType.Shirt:
+                    clothing.ReceiveWearShirt(Guid.Empty, 0, emptyState, false);
+                    break;
+                case SlotType.Pants:
+                    clothing.ReceiveWearPants(Guid.Empty, 0, emptyState, false);
+                    break;
+                case SlotType.Backpack:
+                    clothing.ReceiveWearBackpack(Guid.Empty, 0, emptyState, false);
+                    break;
+                case SlotType.Vest:
+                    clothing.ReceiveWearVest(Guid.Empty, 0, emptyState, false);
+                    break;
+                case SlotType.Hat:
+                    clothing.ReceiveWearHat(Guid.Empty, 0, emptyState, false);
+                    break;
+                case SlotType.Mask:
+                    clothing.ReceiveWearMask(Guid.Empty, 0, emptyState, false);
+                    break;
+                case SlotType.Glasses:
+                    clothing.ReceiveWearGlasses(Guid.Empty, 0, emptyState, false);
+                    break;
+            }
+        }
+
+        private void HandleClothingContents(ClothingItemSnapshot snapshot, ClothingSlotRule rule, PendingRestore pending, Vector3 deathPosition, bool clothingWillDrop, double slotChance, Items container)
+        {
+            if (snapshot.Contents == null || snapshot.Contents.Count == 0)
+            {
+                return;
+            }
+
+            var ordered = new List<ClothingContentSnapshot>(snapshot.Contents);
+            ordered.Sort((a, b) => b.Index.CompareTo(a.Index));
+
+            foreach (var content in ordered)
+            {
+                var item = content.Item;
+                if (item == null || item.id == 0)
+                {
+                    continue;
+                }
+
+                double effectiveChance;
+                switch (rule.ContentsDropMode)
+                {
+                    case ClothingContentsDropMode.MatchSlot:
+                        effectiveChance = slotChance;
+                        break;
+                    case ClothingContentsDropMode.UseContentsChance:
+                        effectiveChance = rule.ContentsDropChance;
+                        break;
+                    case ClothingContentsDropMode.Preserve:
+                        effectiveChance = 0d;
+                        break;
+                    default:
+                        effectiveChance = slotChance;
+                        break;
+                }
+
+                var roll = _random.NextDouble();
+                var shouldDrop = effectiveChance > 0 && roll <= effectiveChance;
+
+                if (shouldDrop)
+                {
+                    container?.removeItem(content.Index);
+                    DropWorldItem(item, deathPosition);
+                    DebugLog($"  Drop contents item={item.id} mode={rule.ContentsDropMode} chance={effectiveChance:F4} roll={roll:F4} -> dropped");
+                    continue;
+                }
+
+                if (clothingWillDrop)
+                {
+                    container?.removeItem(content.Index);
+                    pending.InventoryItems.Add(new InventoryRestoreRecord(CloneItem(item)));
+                    DebugLog($"  Keep contents item={item.id} mode={rule.ContentsDropMode} -> moved to pending restore (clothing dropped)");
+                }
+                else
+                {
+                    DebugLog($"  Keep contents item={item.id} mode={rule.ContentsDropMode} -> retained in clothing");
+                }
+            }
+        }
+
+        private void WearClothingItem(PlayerClothing clothing, ClothingItemSnapshot snapshot)
+        {
+            var state = snapshot.Item.state ?? Array.Empty<byte>();
+            switch (snapshot.SlotType)
+            {
+                case SlotType.Shirt:
+                    clothing.askWearShirt(snapshot.Item.id, snapshot.Item.quality, state, true);
+                    break;
+                case SlotType.Pants:
+                    clothing.askWearPants(snapshot.Item.id, snapshot.Item.quality, state, true);
+                    break;
+                case SlotType.Backpack:
+                    clothing.askWearBackpack(snapshot.Item.id, snapshot.Item.quality, state, true);
+                    break;
+                case SlotType.Vest:
+                    clothing.askWearVest(snapshot.Item.id, snapshot.Item.quality, state, true);
+                    break;
+                case SlotType.Hat:
+                    clothing.askWearHat(snapshot.Item.id, snapshot.Item.quality, state, true);
+                    break;
+                case SlotType.Mask:
+                    clothing.askWearMask(snapshot.Item.id, snapshot.Item.quality, state, true);
+                    break;
+                case SlotType.Glasses:
+                    clothing.askWearGlasses(snapshot.Item.id, snapshot.Item.quality, state, true);
+                    break;
+            }
+        }
+
         private void RestoreInventory(UnturnedPlayer player, PendingRestore pending)
         {
             var inventory = player.Player?.inventory;
@@ -171,11 +339,26 @@ namespace FFEmqo.ModifiedItemDrop.Drop
             }
         }
 
+        private void RestoreClothing(UnturnedPlayer player, PendingRestore pending)
+        {
+            var clothing = player.Player?.clothing;
+            if (clothing == null)
+            {
+                return;
+            }
+
+            foreach (var snapshot in pending.ClothingItems)
+            {
+                WearClothingItem(clothing, snapshot);
+            }
+        }
+
         private void RestoreImmediately(UnturnedPlayer player, PendingRestore pending)
         {
             try
             {
                 RestoreInventory(player, pending);
+                RestoreClothing(player, pending);
             }
             catch (Exception ex)
             {
@@ -224,6 +407,37 @@ namespace FFEmqo.ModifiedItemDrop.Drop
             }
         }
 
+        private static bool ShouldServerDropClothes(UnturnedPlayer player)
+        {
+            var life = player?.Player?.life;
+            var modeConfig = Provider.modeConfigData;
+            if (life == null || modeConfig?.Players == null)
+            {
+                return false;
+            }
+
+            return life.wasPvPDeath ? modeConfig.Players.Lose_Clothes_PvP : modeConfig.Players.Lose_Clothes_PvE;
+        }
+
+        private static void ForceUnequipCurrentItem(UnturnedPlayer player)
+        {
+            var equipment = player?.Player?.equipment;
+            if (equipment == null)
+            {
+                return;
+            }
+
+            try
+            {
+                equipment.dequip();
+            }
+            catch (Exception)
+            {
+                // Ignore and continue; equipment might already be unequipped.
+            }
+        }
+
+
         private sealed class PendingRestore
         {
             public PendingRestore(UnturnedPlayer player)
@@ -235,7 +449,9 @@ namespace FFEmqo.ModifiedItemDrop.Drop
 
             public List<InventoryRestoreRecord> InventoryItems { get; } = new List<InventoryRestoreRecord>();
 
-            public bool IsEmpty => InventoryItems.Count == 0;
+            public List<ClothingItemSnapshot> ClothingItems { get; } = new List<ClothingItemSnapshot>();
+
+            public bool IsEmpty => InventoryItems.Count == 0 && ClothingItems.Count == 0;
         }
 
         private sealed class InventoryRestoreRecord

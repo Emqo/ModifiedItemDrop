@@ -13,11 +13,17 @@ namespace FFEmqo.ModifiedItemDrop.Configuration
 
         public List<ItemChanceEntry> CustomItemChances { get; set; } = new List<ItemChanceEntry>();
 
+        [XmlArrayItem("ClothingSlot")]
+        public List<ClothingSlotRule> ClothingRules { get; set; } = new List<ClothingSlotRule>();
+
         [XmlIgnore]
         private Dictionary<string, double> _regionChanceMap;
 
         [XmlIgnore]
         private Dictionary<ushort, double> _itemChanceMap;
+
+        [XmlIgnore]
+        private Dictionary<SlotType, ClothingSlotRule> _clothingRuleMap;
 
         public static DropRuleSet CreateDefault()
         {
@@ -28,16 +34,19 @@ namespace FFEmqo.ModifiedItemDrop.Configuration
                 {
                     new RegionChanceEntry { Region = nameof(SlotType.PrimaryWeapon), Chance = 0.7d },
                     new RegionChanceEntry { Region = nameof(SlotType.SecondaryWeapon), Chance = 0.3d },
-                    new RegionChanceEntry { Region = nameof(SlotType.Shirt), Chance = 0.4d },
-                    new RegionChanceEntry { Region = nameof(SlotType.Pants), Chance = 0.4d },
-                    new RegionChanceEntry { Region = nameof(SlotType.Backpack), Chance = 0.5d },
-                    new RegionChanceEntry { Region = nameof(SlotType.Vest), Chance = 0.6d },
-                    new RegionChanceEntry { Region = nameof(SlotType.Hat), Chance = 0.3d },
-                    new RegionChanceEntry { Region = nameof(SlotType.Mask), Chance = 0.3d },
-                    new RegionChanceEntry { Region = nameof(SlotType.Glasses), Chance = 0.3d },
                     new RegionChanceEntry { Region = nameof(SlotType.Inventory), Chance = 0.5d }
                 },
-                CustomItemChances = new List<ItemChanceEntry>()
+                CustomItemChances = new List<ItemChanceEntry>(),
+                ClothingRules = new List<ClothingSlotRule>
+                {
+                    new ClothingSlotRule { Slot = SlotType.Shirt, SlotDropChance = 0.4d, ContentsDropMode = ClothingContentsDropMode.UseContentsChance, ContentsDropChance = 0.35d },
+                    new ClothingSlotRule { Slot = SlotType.Pants, SlotDropChance = 0.4d, ContentsDropMode = ClothingContentsDropMode.UseContentsChance, ContentsDropChance = 0.35d },
+                    new ClothingSlotRule { Slot = SlotType.Backpack, SlotDropChance = 0.5d, ContentsDropMode = ClothingContentsDropMode.MatchSlot, ContentsDropChance = 0.5d },
+                    new ClothingSlotRule { Slot = SlotType.Vest, SlotDropChance = 0.6d, ContentsDropMode = ClothingContentsDropMode.UseContentsChance, ContentsDropChance = 0.45d },
+                    new ClothingSlotRule { Slot = SlotType.Hat, SlotDropChance = 0.3d, ContentsDropMode = ClothingContentsDropMode.Preserve, ContentsDropChance = 0.0d },
+                    new ClothingSlotRule { Slot = SlotType.Mask, SlotDropChance = 0.3d, ContentsDropMode = ClothingContentsDropMode.Preserve, ContentsDropChance = 0.0d },
+                    new ClothingSlotRule { Slot = SlotType.Glasses, SlotDropChance = 0.3d, ContentsDropMode = ClothingContentsDropMode.Preserve, ContentsDropChance = 0.0d }
+                }
             };
         }
 
@@ -47,7 +56,8 @@ namespace FFEmqo.ModifiedItemDrop.Configuration
             {
                 GlobalDefaultChance = ClampChance(GlobalDefaultChance),
                 RegionChances = new List<RegionChanceEntry>(),
-                CustomItemChances = new List<ItemChanceEntry>()
+                CustomItemChances = new List<ItemChanceEntry>(),
+                ClothingRules = new List<ClothingSlotRule>()
             };
 
             if (RegionChances != null)
@@ -84,6 +94,26 @@ namespace FFEmqo.ModifiedItemDrop.Configuration
                 }
             }
 
+            if (ClothingRules != null)
+            {
+                foreach (var rule in ClothingRules)
+                {
+                    if (rule == null || rule.Slot == SlotType.Unknown)
+                    {
+                        continue;
+                    }
+
+                    ruleSet.ClothingRules.Add(new ClothingSlotRule
+                    {
+                        Slot = rule.Slot,
+                        SlotDropChance = ClampChance(rule.SlotDropChance),
+                        ContentsDropMode = rule.ContentsDropMode,
+                        ContentsDropChance = ClampChance(rule.ContentsDropChance),
+                        FutureWork = rule.FutureWork
+                    });
+                }
+            }
+
             ruleSet.ResetCaches();
             return ruleSet;
         }
@@ -107,6 +137,24 @@ namespace FFEmqo.ModifiedItemDrop.Configuration
 
             source = "Global";
             return ClampChance(GlobalDefaultChance);
+        }
+
+        public ClothingSlotRule ResolveClothingRule(SlotType slotType)
+        {
+            EnsureCaches();
+
+            if (_clothingRuleMap != null && _clothingRuleMap.TryGetValue(slotType, out var rule))
+            {
+                return rule;
+            }
+
+            return new ClothingSlotRule
+            {
+                Slot = slotType,
+                SlotDropChance = ClampChance(GlobalDefaultChance),
+                ContentsDropMode = ClothingContentsDropMode.MatchSlot,
+                ContentsDropChance = ClampChance(GlobalDefaultChance)
+            };
         }
 
         private void EnsureCaches()
@@ -143,12 +191,35 @@ namespace FFEmqo.ModifiedItemDrop.Configuration
                     _itemChanceMap[entry.ItemID] = ClampChance(entry.Chance);
                 }
             }
+
+            _clothingRuleMap = new Dictionary<SlotType, ClothingSlotRule>();
+            if (ClothingRules != null)
+            {
+                foreach (var rule in ClothingRules)
+                {
+                    if (rule == null || rule.Slot == SlotType.Unknown)
+                    {
+                        continue;
+                    }
+
+                    var normalized = new ClothingSlotRule
+                    {
+                        Slot = rule.Slot,
+                        SlotDropChance = ClampChance(rule.SlotDropChance),
+                        ContentsDropMode = rule.ContentsDropMode,
+                        ContentsDropChance = ClampChance(rule.ContentsDropChance),
+                        FutureWork = rule.FutureWork
+                    };
+                    _clothingRuleMap[normalized.Slot] = normalized;
+                }
+            }
         }
 
         private void ResetCaches()
         {
             _regionChanceMap = null;
             _itemChanceMap = null;
+            _clothingRuleMap = null;
         }
 
         private static double ClampChance(double value)
@@ -184,6 +255,26 @@ namespace FFEmqo.ModifiedItemDrop.Configuration
         public ushort ItemID { get; set; }
 
         public double Chance { get; set; }
+    }
+
+    public class ClothingSlotRule
+    {
+        public SlotType Slot { get; set; }
+
+        public double SlotDropChance { get; set; } = 0.5d;
+
+        public ClothingContentsDropMode ContentsDropMode { get; set; } = ClothingContentsDropMode.MatchSlot;
+
+        public double ContentsDropChance { get; set; } = 0.5d;
+
+        public string FutureWork { get; set; }
+    }
+
+    public enum ClothingContentsDropMode
+    {
+        MatchSlot,
+        UseContentsChance,
+        Preserve
     }
 }
 

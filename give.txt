@@ -1,14 +1,42 @@
-/give Emqo 363 1           # MapleStrike (primary weapon)
-/give Emqo 18 10           # MapleStrike Magazine
-/give Emqo 102 1           # Colt (secondary weapon)
-/give Emqo 103 5           # Colt Magazine
-/give Emqo 1092 1          # Spec Ops Rucksack (backpack)
-/give Emqo 1090 1          # Spec Ops Vest
-/give Emqo 1091 1          # Spec Ops Top (shirt)
-/give Emqo 1093 1          # Spec Ops Bottom (pants)
-/give Emqo 310 1           # Military Helmet (hat)
-/give Emqo 519 1           # Gas Mask (mask)
-/give Emqo 328 1           # Nightvision (glasses)
-/give Emqo 81 5            # Medkit (custom item example)
-/give Emqo 15 5            # Military Drum (custom item example)
-
+/give Emqo 1 1
+/give Emqo 4 1
+/give Emqo 15 1
+/give Emqo 16 1
+/give Emqo 17 1
+/give Emqo 18 1
+/give Emqo 253 1
+/give Emqo 254 1
+/give Emqo 255 1
+/give Emqo 256 1
+/give Emqo 257 1
+/give Emqo 1001 1
+/give Emqo 1002 1
+/give Emqo 1003 1
+/give Emqo 1004 1
+/give Emqo 1005 1
+/give Emqo 122 1
+/give Emqo 363 1
+/give Emqo 116 1
+/give Emqo 297 1
+/give Emqo 245 1
+/give Emqo 118 1
+/give Emqo 119 1
+/give Emqo 244 1
+/give Emqo 1192 1
+/give Emqo 1193 1
+/give Emqo 1194 1
+/give Emqo 209 1
+/give Emqo 210 1
+/give Emqo 13 1
+/give Emqo 14 1
+/give Emqo 76 1
+/give Emqo 81 1
+/give Emqo 95 1
+/give Emqo 96 1
+/give Emqo 112 1
+/give Emqo 113 1
+/give Emqo 114 1
+/give Emqo 115 1
+/give Emqo 458 1
+/give Emqo 519 1
+/give Emqo 520 1

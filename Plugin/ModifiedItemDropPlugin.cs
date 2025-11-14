@@ -4,6 +4,7 @@ using FFEmqo.ModifiedItemDrop.Drop;
 using Rocket.Core.Logging;
 using Rocket.Core.Plugins;
 using System.Reflection;
+using SDG.Unturned;
 
 namespace FFEmqo.ModifiedItemDrop.Plugin
 {
@@ -25,6 +26,7 @@ namespace FFEmqo.ModifiedItemDrop.Plugin
             }
 
             Instance = this;
+            EnsureServerClothingDropsDisabled();
 
             ConfigurationLoader = new ConfigurationLoader(this);
             DropService = new DropService(ConfigurationLoader);
@@ -60,6 +62,23 @@ namespace FFEmqo.ModifiedItemDrop.Plugin
             }
 
             return result;
+        }
+
+        private static void EnsureServerClothingDropsDisabled()
+        {
+            var players = Provider.modeConfigData?.Players;
+            if (players == null)
+            {
+                Logger.LogWarning("[ModifiedItemDrop] Unable to verify Lose_Clothes settings; modeConfigData.Players is null.");
+                return;
+            }
+
+            if (players.Lose_Clothes_PvE || players.Lose_Clothes_PvP)
+            {
+                const string message = "[ModifiedItemDrop] ServerConfig: Players.Lose_Clothes_PvE/PvP must be false for ModifiedItemDrop to run. Please update Servers/Default/Config.json and restart.";
+                Logger.LogError(message);
+                throw new InvalidOperationException(message);
+            }
         }
     }
 }
