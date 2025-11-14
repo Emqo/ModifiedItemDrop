@@ -243,10 +243,13 @@ namespace FFEmqo.ModifiedItemDrop.Drop
                 return;
             }
 
-            var ordered = new List<ClothingContentSnapshot>(snapshot.Contents);
-            ordered.Sort((a, b) => b.Index.CompareTo(a.Index));
+            var contents = snapshot.Contents;
+            if (contents.Count > 1)
+            {
+                contents.Sort((a, b) => b.Index.CompareTo(a.Index));
+            }
 
-            foreach (var content in ordered)
+            foreach (var content in contents)
             {
                 var item = content.Item;
                 if (item == null || item.id == 0)
